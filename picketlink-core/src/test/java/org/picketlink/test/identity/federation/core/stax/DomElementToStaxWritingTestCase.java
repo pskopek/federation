@@ -21,14 +21,19 @@
  */
 package org.picketlink.test.identity.federation.core.stax;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 
 import javax.xml.stream.XMLStreamWriter;
+
+import junit.framework.Assert;
 
 import org.junit.Test;
 import org.picketlink.identity.federation.core.saml.v2.util.DocumentUtil;
 import org.picketlink.identity.federation.core.util.StaxUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 /**
  * Test how we write a DOM Element to Stax writer
@@ -37,6 +42,7 @@ import org.w3c.dom.Document;
  * @since Nov 8, 2010
  */
 public class DomElementToStaxWritingTestCase {
+    @SuppressWarnings("restriction")
     @Test
     public void testDOM2Stax() throws Exception {
         String xml = "<a xmlns=\'urn:hello\' >  <b> <c/> <d xmlns=\'urn:t\' test=\'tt\'/> </b></a>";
@@ -47,8 +53,12 @@ public class DomElementToStaxWritingTestCase {
 
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(baos);
         StaxUtil.writeDOMElement(writer, doc.getDocumentElement());
-
+        writer.flush();
+        writer.close();
         String writtenDoc = new String(baos.toByteArray());
         doc = DocumentUtil.getDocument(writtenDoc);
+        NodeList nl = doc.getElementsByTagNameNS("urn:hello", "a");
+        assertEquals("a", nl.item(0).getNodeName());
+        assertEquals("urn:hello", nl.item(0).getNamespaceURI());
     }
 }
