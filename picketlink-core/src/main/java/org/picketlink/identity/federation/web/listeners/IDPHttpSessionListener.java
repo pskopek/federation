@@ -45,6 +45,12 @@ public class IDPHttpSessionListener implements HttpSessionListener {
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
     
     public void sessionCreated(HttpSessionEvent se) {
+        if (logger.isTraceEnabled()) {
+            // TODO: i18n
+            if (se.getSession() != null) {
+                logger.trace("session created: " + se.getSession().getId());
+            }
+        }
     }
 
     public void sessionDestroyed(HttpSessionEvent se) {
@@ -58,8 +64,9 @@ public class IDPHttpSessionListener implements HttpSessionListener {
         // server. So we know that the token has not been canceled by the STS.
         if (assertion != null) {
 
-            logger.trace("User has closed the browser. So we proceed to cancel the STS issued token.");
-
+            if (logger.isTraceEnabled()) {
+                logger.trace("User has closed the browser. So we proceed to cancel the STS issued token.");
+            }
             PicketLinkCoreSTS sts = PicketLinkCoreSTS.instance();
             SAMLProtocolContext samlProtocolContext = new SAMLProtocolContext();
             samlProtocolContext.setIssuedAssertion(assertion);

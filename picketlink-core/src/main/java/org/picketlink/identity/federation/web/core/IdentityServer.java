@@ -21,6 +21,7 @@
  */
 package org.picketlink.identity.federation.web.core;
 
+import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
@@ -28,11 +29,16 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import org.infinispan.Cache;
+import org.infinispan.manager.CacheContainer;
 import org.picketlink.identity.federation.PicketLinkLogger;
 import org.picketlink.identity.federation.PicketLinkLoggerFactory;
 import org.picketlink.identity.federation.web.constants.GeneralConstants;
@@ -44,6 +50,11 @@ import org.picketlink.identity.federation.web.constants.GeneralConstants;
  * @since Sep 17, 2009
  */
 public class IdentityServer implements HttpSessionListener {
+
+    public static final String STACK_CACHE_KEY = "identity.stack";
+    public static final String ACTIVE_SESSION_COUNT_CACHE_KEY = "identity.stack.asc";
+    
+    private Cache<String, IdentityParticipantStack> cache = null;
     
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
@@ -57,9 +68,51 @@ public class IdentityServer implements HttpSessionListener {
 
     private static int activeSessionCount = 0;
 
-    private IdentityParticipantStack stack = new STACK();
+    private IdentityParticipantStack stack = null;
+    
+    
+    
+    
+    public IdentityServer() {
+        this(true);
+    }
+    
+    
+    public IdentityServer(boolean cacheData) {
+        
+        if (cacheData) {
+            CacheContainer cacheContainer = null;
+            // TODO: get the JNDI name from property to have it configurable
+            String cacheContainerName = "java:jboss/infinispan/container/singleton";
 
-    public static class STACK implements IdentityParticipantStack {
+            try {
+                Context ctx = new InitialContext();
+                cacheContainer = (CacheContainer) ctx.lookup(cacheContainerName);  
+                cache = cacheContainer.getCache();
+            }
+            catch (NamingException e) {
+                // TODO: fix message i18n
+                logger.info("Cannot find " + cacheContainerName);
+                cache = null;
+            }
+
+            if (cache != null) {
+                stack = cache.get(STACK_CACHE_KEY);
+            }
+        }
+        
+        if (stack == null) {
+            stack = new STACK();
+            updateCache();
+        }
+        
+    }
+
+
+    public static class STACK implements IdentityParticipantStack, Serializable {
+        
+        static final long serialVersionUID = -4808807521753291812L;
+        
         private final ConcurrentHashMap<String, Stack<String>> sessionParticipantsMap = new ConcurrentHashMap<String, Stack<String>>();
 
         private final ConcurrentHashMap<String, Set<String>> inTransitMap = new ConcurrentHashMap<String, Set<String>>();
@@ -197,6 +250,11 @@ public class IdentityServer implements HttpSessionListener {
      * @return
      */
     public IdentityParticipantStack stack() {
+        
+        if (cache != null) {
+            stack = cache.get(STACK_CACHE_KEY);
+        }
+        
         return stack;
     }
 
@@ -206,7 +264,8 @@ public class IdentityServer implements HttpSessionListener {
      * @param theStack
      */
     public void setStack(IdentityParticipantStack theStack) {
-        this.stack = theStack;
+        stack = theStack;
+        updateCache();
     }
 
     /**
@@ -251,4 +310,17 @@ public class IdentityServer implements HttpSessionListener {
         
         stack.removeSession(id);
     }
+    
+    /**
+     * Update all cached objects.
+     */
+    public void updateCache() {
+        if (cache != null) {
+            cache.put(STACK_CACHE_KEY, stack);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Stack pushed to the cache");
+            }
+        }
+    }
+    
 }

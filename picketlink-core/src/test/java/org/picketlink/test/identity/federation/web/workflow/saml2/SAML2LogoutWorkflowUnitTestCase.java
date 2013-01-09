@@ -307,7 +307,7 @@ public class SAML2LogoutWorkflowUnitTestCase {
 
     // Get the Identity server with 2 participants
     private IdentityServer getIdentityServer(HttpSession session) {
-        IdentityServer server = new IdentityServer();
+        IdentityServer server = new IdentityServer(false);
         server.sessionCreated(new HttpSessionEvent(session));
 
         server.stack().register(session.getId(), sales, false);

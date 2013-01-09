@@ -109,6 +109,12 @@
         <version>2.7.1.patch01-brew</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.infinispan</groupId>
+        <artifactId>infinispan-core</artifactId>
+        <version>5.2.0.Beta3</version>
+        <scope>compile</scope>
+      </dependency>
    </dependencies>
    
    <reporting>

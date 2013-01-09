@@ -196,11 +196,13 @@ public class SAML2AuthenticationHandler extends BaseSAML2Handler {
                 // for registration to IdentityServer
                 String participantLogoutURL = getParticipantURL(destination, request);
 
-                logger.trace("Participant " + destination + " will be registered to IdentityServer with logout URL " + participantLogoutURL);
-                
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Participant " + destination + " will be registered to IdentityServer with logout URL " + participantLogoutURL);
+                }
                 // If URL is null, participant doesn't support global logout
                 if (participantLogoutURL != null) {
                     identityServer.stack().register(session.getId(), participantLogoutURL, isPost);
+                    identityServer.updateCache();
                 }
 
                 // Check whether we use POST binding for response

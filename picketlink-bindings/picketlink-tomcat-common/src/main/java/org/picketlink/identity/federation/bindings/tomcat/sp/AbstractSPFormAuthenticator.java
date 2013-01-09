@@ -265,6 +265,9 @@ public abstract class AbstractSPFormAuthenticator extends BaseFormAuthenticator 
     public boolean authenticate(Request request, Response response, LoginConfig loginConfig) throws IOException {
         try {
             Session session = request.getSessionInternal(true);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Going to authenticate session:" + session);
+            }
 
             // Eagerly look for Local LogOut
             boolean localLogout = isLocalLogout(request);
@@ -284,6 +287,12 @@ public abstract class AbstractSPFormAuthenticator extends BaseFormAuthenticator 
 
             Principal principal = request.getUserPrincipal();
 
+            if (logger.isTraceEnabled()) {
+                logger.trace("principal="+principal.toString());
+                logger.trace("samlRequest="+samlRequest);
+                logger.trace("samlResponse="+samlResponse);
+            }
+            
             // If we have already authenticated the user and there is no request from IDP or logout from user
             if (principal != null && !(isGlobalLogout(request) || isNotNull(samlRequest) || isNotNull(samlResponse)))
                 return true;

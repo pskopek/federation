@@ -50,6 +50,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Session;
+import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.deploy.LoginConfig;
@@ -282,6 +283,13 @@ public abstract class AbstractIDPValve extends ValveBase {
     
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
+       
+        if (logger.isTraceEnabled()) {
+            logger.trace("--------------------------------------------------");
+            logger.trace(request.getRequestURL().toString());
+            logger.trace("--------------------------------------------------");
+        }
+        
         String referer = request.getHeader("Referer");
         String relayState = request.getParameter(GeneralConstants.RELAY_STATE);
 
@@ -318,12 +326,14 @@ public abstract class AbstractIDPValve extends ValveBase {
         if (userPrincipal == null) {
             try {
                 // Next in the invocation chain
-                getNext().invoke(request, response);
+                // TODO: delete later
+                Valve valve = getNext();
+                valve.invoke(request, response);
             } finally {
                 userPrincipal = request.getPrincipal();
                 referer = request.getHeader("Referer");
 
-                logger.trace("Referer in finally block=" + referer + ":user principal=" + userPrincipal);
+                logger.trace("IDPvalve.invoke:Referer in finally block=" + referer + ":user principal=" + userPrincipal);
             }
         }
 
